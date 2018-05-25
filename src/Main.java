@@ -1,3 +1,5 @@
+import java.util.*;
+
 public class Main {
 
     // [partFrom .. partTo)
@@ -75,9 +77,11 @@ public class Main {
             putLong(to, maxPref);
             putLong(to, maxSuf);
             putLong(to, maxAns);
+            sendMessage(to);
         }
 
         public SandwichPart receiveFrom(int from) {
+            receiveMessage(from);
             SandwichPart res = new SandwichPart(readLong(from), readLong(from), readLong(from), readLong(from));
 //            System.err.println("received " + res +" from " + from);
             return res;
@@ -96,11 +100,9 @@ public class Main {
 
     SandwichPart[] getAllNodes(SandwichPart curInfo) {
         curInfo.sendTo(rootNode);
-        sendMessage(rootNode);
         if (myId == rootNode) {
             SandwichPart[] res = new SandwichPart[nodes];
             for (int i = 0; i < nodes; i++) {
-                receiveMessage(i);
                 res[i] = curInfo.receiveFrom(i);
             }
             return res;

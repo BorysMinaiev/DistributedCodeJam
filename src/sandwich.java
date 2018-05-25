@@ -1,22 +1,33 @@
-// Sample input 1, in Java.
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 public class sandwich {
+    static int n;
+    static long[] a;
+
+    static {
+        try {
+            Scanner sc = new Scanner(new File("test.in"));
+            n = sc.nextInt();
+            a = new long[n];
+            for (int i = 0; i < n; i++) {
+                a[i] = sc.nextLong();
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
     public sandwich() {
+
     }
 
     public static long GetN() {
-        return 7L;
+        return n;
     }
 
     public static long GetTaste(long index) {
-        switch ((int)index) {
-            case 0: return 10L;
-            case 1: return -2L;
-            case 2: return 5L;
-            case 3: return -4L;
-            case 4: return 3L;
-            case 5: return -5L;
-            case 6: return 1L;
-            default: throw new IllegalArgumentException("Invalid argument");
-        }
+        return a[(int) index];
     }
 }
