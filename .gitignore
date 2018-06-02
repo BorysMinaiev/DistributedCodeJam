@@ -27,3 +27,5 @@ out.*
 test.*
 *.xml
 .idea
+
+.idea/uiDesigner.xml
