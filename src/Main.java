@@ -6,138 +6,92 @@ public class Main {
     // [partFrom .. partTo)
     int partFrom, partTo;
     int partLen;
+    int n;
 
-    int[] cachedValues;
-
-    int get(int pos) {
-        if (pos >= partFrom && pos < partTo) {
-            return cachedValues[pos - partFrom];
-        }
-        if (pos < 0 || pos >= n) {
-            return -1;
-        }
-        return (int) baby_blocks.GetBlockWeight(pos);
+    long getMult(Random rnd) {
+        long res = rnd.nextLong();
+        return res % 2 == 0 ? (res + 1) : res;
     }
 
-    int getFrom(int nodeId) {
-        return Math.min(n, nodeId * partSize);
-    }
+    class BinarySearch {
+        int nodeTo;
+        int from, to;
+        long[] s;
 
-    int getTo(int nodeId) {
-        return Math.min(n, (nodeId + 1) * partSize);
-    }
-
-    int n, partSize;
-
-    boolean[] taskSent;
-    void sendTaskToNode(int leftFr, int leftTo, long leftSum, int rightFr, int rightTo, long rightSum, int nodeId) {
-        if (taskSent[nodeId]) {
-            throw new AssertionError();
+        public BinarySearch(int nodeTo, int from, int to, long[] s) {
+            this.nodeTo = nodeTo;
+            this.from = from;
+            this.to = to;
+            this.s = s;
         }
-        taskSent[nodeId] = true;
-        putInt(nodeId, leftFr);
-        putInt(nodeId, leftTo);
-        putLong(nodeId, leftSum);
-        putInt(nodeId, rightFr);
-        putInt(nodeId, rightTo);
-        putLong(nodeId, rightSum);
-        sendMessage(nodeId);
+
+        void ask() {
+            if (to - from > 1) {
+                int mid = (to + from) >> 1;
+                putLong(nodeTo, s[mid + 1] - s[from + 1]);
+                sendMessage(nodeTo);
+            }
+        }
+
+        void got() {
+            if (to - from > 1) {
+                int mid = (to + from) >> 1;
+                receiveMessage(nodeTo);
+                if (s[mid + 1] - s[from + 1] != readLong(nodeTo)) {
+                    to = mid;
+                } else {
+                    from = mid;
+                }
+            }
+        }
+
+        void reset(List<Integer> answer, int n) {
+            answer.add(to);
+            from = to;
+            to = n - 1;
+        }
     }
 
     void solve() {
-        n = (int) baby_blocks.GetNumberOfBlocks();
-        partSize = 1 + (n - 1) / nodes;
-        partFrom = getFrom(myId);
-        partTo = getTo(myId);
-        partLen = partTo - partFrom;
-        if (partLen == 0) {
-            return;
+        n = (int) broken_memory.GetLength();
+        Random rnd = new Random(123);
+        long[] prefSum = new long[n + 1];
+        for (int i = 0; i < n; i++) {
+            prefSum[i + 1] = prefSum[i] + getMult(rnd) * broken_memory.GetValue(i);
         }
-        while (getFrom(nodes - 1) >= n) {
-            nodes--;
+        int leftNode = (myId -1 + nodes) % nodes;
+        int rightNode = (myId + 1) % nodes;
+        BinarySearch leftBS = new BinarySearch(leftNode, -1, n - 1, prefSum);
+        BinarySearch rightBS = new BinarySearch(rightNode, -1, n - 1, prefSum);
+        List<Integer> broken = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            for (int it = 0; it < 30; it++) {
+                leftBS.ask();
+                rightBS.ask();
+                leftBS.got();
+                rightBS.got();
+            }
+            leftBS.reset(broken, n);
+            rightBS.reset(broken, n);
         }
-        cachedValues = new int[partLen];
-        long sum = 0;
-        for (int i = 0; i < partLen; i++) {
-            cachedValues[i] = (int) baby_blocks.GetBlockWeight(i + partFrom);
-            sum += cachedValues[i];
+        int brokenPos = -1;
+        Collections.sort(broken);
+        for (int i = 0; i + 1 < broken.size(); i++) {
+            if (broken.get(i).equals(broken.get(i + 1))) {
+                brokenPos = broken.get(i);
+            }
         }
-        long[] partSum = joinLongArray(sum);
+        if (brokenPos == -1) {
+            throw new AssertionError();
+        }
+        int[] res = joinIntArray(brokenPos);
         if (iAmRoot()) {
-            taskSent = new boolean[nodes];
-            long sumLeft = 0, sumRight = 0;
-            int i = 0, j = nodes - 1;
-            while (i <= j) {
-                long nextSumLeft = sumLeft + partSum[i];
-                long nextSumRight = sumRight + partSum[j];
-                if (nextSumLeft <= sumRight) {
-                    sumLeft= nextSumLeft;
-                    i++;
-                    continue;
-                }
-                if (nextSumRight <= sumLeft) {
-                    sumRight = nextSumRight;
-                    j--;
-                    continue;
-                }
-                int sendTo = (nextSumLeft <= nextSumRight) ? i : j;
-                sendTaskToNode(getFrom(i), getTo(i), sumLeft, getFrom(j), getTo(j), sumRight, sendTo);
-                if (sendTo == i) {
-                    sumLeft = nextSumLeft;
-                    i++;
-                } else {
-                    sumRight = nextSumRight;
-                    j--;
-                }
+            for (int i : res) {
+                System.out.print(i + " ");
             }
-            for (int k = 0; k < nodes; k++) {
-                if (!taskSent[k]) {
-                    putInt(k, -1);
-                    sendMessage(k);
-                }
-            }
-        }
-        receiveMessage(rootNode);
-        int leftFr = readInt(rootNode);
-        if (leftFr != -1) {
-            int leftTo = readInt(rootNode);
-            long leftSum = readLong(rootNode);
-            int rightFr = readInt(rootNode);
-            int rightTo = readInt(rootNode);
-            long rightSum = readLong(rootNode);
-            putInt(rootNode, solveSubTask(leftFr, leftTo, leftSum, rightTo - 1, rightFr - 1, rightSum));
-            sendMessage(rootNode);
-        }
-        if (iAmRoot()) {
-            int res= 0;
-            for (int i = 0; i < nodes; i++) {
-                if (taskSent[i]) {
-                    receiveMessage(i);
-                    res += readInt(i);
-                }
-            }
-            println(res);
         }
     }
 
-    int solveSubTask(int lFr, int lTo, long sumL, int rFr, int rTo, long sumR) {
-        int res = 0;
-        sumL += get(lFr);
-        sumR += get(rFr);
-        while (lFr < rFr && lFr < lTo && rFr > rTo) {
-            if (sumL == sumR) {
-                res++;
-            }
-            if (sumL <= sumR) {
-                lFr++;
-                sumL += get(lFr);
-            } else {
-                rFr--;
-                sumR += get(rFr);
-            }
-        }
-        return res;
-    }
 
     void putInt(int to, int value) {
         if (debug) {
