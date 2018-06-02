@@ -3,7 +3,7 @@
 javac Gen.java
 
 for i in `seq 1 100`; do
-	echo $i
+	echo "TEST $i"
 	java Gen > test.in
 	/home/borys/dcj/dcj.sh test --source Main.java --library sandwich.java --nodes 1 --output all > out.1
 	/home/borys/dcj/dcj.sh test --source Main.java --library sandwich.java --nodes 5 --output all > out.3
@@ -13,6 +13,8 @@ for i in `seq 1 100`; do
 		echo "out.1 is not equal to out.3"
 		exit 123; 
 	fi
+	echo "answer:"
+	cat out.1
 	# cmp out.1 out.10
 	# if [[ $? != 0 ]]; then 
 	# 	echo "out.1 is not equal to out.10"

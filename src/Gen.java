@@ -6,10 +6,10 @@ public class Gen {
 
     void solve() {
         Random rnd = new Random();
-        int n = 1 + rnd.nextInt(100);
+        int n = 1 + rnd.nextInt(10000);
         out.println(n);
         for (int i = 0; i < n; i++) {
-            long x = (rnd.nextBoolean() ? 1 : -1) * rnd.nextInt((int) 1e9);
+            long x = 1 + rnd.nextInt((int) 10);
             out.print(x + " ");
         }
         out.println();
