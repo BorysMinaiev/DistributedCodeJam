@@ -2,7 +2,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class Test {
-    public static void main(String[] args) {
+    void test1() {
         int n = (int) 1e9;
         int m = 100;
         int[] a = new int[m + 2];
@@ -17,5 +17,24 @@ public class Test {
             max = Math.max(max, a[i + 1] - a[i]);
         }
         System.err.println("max len = " + max);
+    }
+
+    static void test2() {
+        Random rnd = new Random();
+        int n = 100;
+        int m = 346782;
+        int[] cnt =new int[n];
+        for (int i = 0; i < n * m; i++) {
+            cnt[rnd.nextInt(n)]++;
+        }
+        int max = 0;
+        for (int x : cnt) {
+            max = Math.max(max, x);
+        }
+        System.err.println("max = " + max);
+    }
+
+    public static void main(String[] args) {
+        test2();
     }
 }
