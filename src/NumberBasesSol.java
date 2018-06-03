@@ -1,7 +1,4 @@
-import java.math.BigInteger;
-import java.util.*;
-
-public class Main {
+public class NumberBasesSol {
     final boolean debug = false;
 
     // [partFrom .. partTo)
@@ -227,6 +224,6 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        new Main().start();
+        new NumberBasesSol().start();
     }
 }
