@@ -50,8 +50,8 @@ public class LocalRunner {
         return res;
     }
 
-    final int MAX_LEN = 1000;
-    final int MAX_V = 10000;
+    final int MAX_LEN = 6;
+    final int MAX_V = 10;
     final int MAX_NODES = 30;
 
     void start() {

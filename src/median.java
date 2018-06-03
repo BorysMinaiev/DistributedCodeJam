@@ -29,7 +29,7 @@ public class median {
     }
 
     public static int GetN() {
-        return a.length;
+        return -1;
     }
 
     public static int GetData(long i) {

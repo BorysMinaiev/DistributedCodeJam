@@ -1,7 +1,8 @@
-import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Random;
 
-public class Main {
+public class MedianCorrectSol {
     final boolean debug = false;
 
     // [partFrom .. partTo)
@@ -373,6 +374,6 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        new Main().start();
+        new MedianCorrectSol().start();
     }
 }
