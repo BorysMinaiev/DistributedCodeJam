@@ -1,7 +1,6 @@
-import java.math.BigInteger;
 import java.util.*;
 
-public class Main {
+public class MedianNotOk {
     final boolean debug = false;
 
     // [partFrom .. partTo)
@@ -26,55 +25,70 @@ public class Main {
     final int p = 239017;
     final int len = (1 << 6);
     int[] pow = new int[len + 1];
-    final int PARTS = 1005;
-    final int mod = 1023456817;
-
-    int mul(int x, int y) {
-        return (int)(x*1L*y%mod);
-    }
-
-    int sub(int x, int y) {
-        x -= y;
-        return x < 0? (x + mod) : x;
-    }
-
-    int add(int x, int y) {
-        x += y;
-        return x >= mod ? (x - mod) : x;
-    }
 
     class MiddleFinder {
-        int[] values = new int[PARTS];
-        int minElement, maxElement;
-        int partSize;
-        int cntLess, cntMore;
-
-        void clear(int minElement, int maxElement) {
-            this.minElement = minElement;
-            this.maxElement = maxElement;
-            cntLess = 0;
-            cntMore = 0;
-            partSize = 1 + (maxElement - minElement) / PARTS;
-            Arrays.fill(values, 0);
-        }
+        final int MAX = (int) 1e6;
+        int[] values = new int[MAX];
+        int minElement = Integer.MIN_VALUE, maxElement = Integer.MAX_VALUE;
+        int cntMin = 0, cntMax = 0;
+        final int SHIFT = 2000;
+        int sz;
+        int total;
 
 
-        MiddleFinder(int minElement, int maxElement) {
-            clear(minElement, maxElement);
+        MiddleFinder() {
+
         }
 
         void addElement(int x) {
-            if (x < minElement) {
-                cntLess++;
-            } else if (x > maxElement) {
-                cntMore++;
+            total++;
+            if (x <= minElement) {
+                cntMin++;
+                return;
+            }
+            if (x >= maxElement) {
+                cntMax++;
+                return;
+            }
+            if (sz < MAX) {
+                values[sz++] = x;
             } else {
-                values[(x - minElement) / partSize]++;
+                shrink();
+                addElement(x);
             }
         }
 
+        void shrink() {
+            if (sz <= SHIFT * 2) {
+                return;
+            }
+            int sum = sz + cntMin + cntMax;
+            Arrays.sort(values, 0, sz);
+//            System.err.println("shrink! " + sz + " " + total + " " + cntMin + " " + cntMax + ", sum = " + sum + ",mid = " + values[midPosReal]);
+            int midPos = sum / 2 - cntMin;
+            int from = midPos - SHIFT;
+            int to = midPos + SHIFT;
+            if (from >= 0) {
+                minElement = values[from];
+            }
+            if (to < sz) {
+                maxElement = values[to];
+            }
+            int nsz = 0;
+            for (int i = 0; i < sz; i++) {
+                if (values[i] <= minElement) {
+                    cntMin++;
+                } else if (values[i] >= maxElement) {
+                    cntMax++;
+                } else {
+                    values[nsz++] = values[i];
+                }
+            }
+//            System.err.println(minElement + " " + maxElement);
+            sz = nsz;
+        }
     }
-    MiddleFinder finder = new MiddleFinder(0, (int) 1e9);
+    MiddleFinder finder = new MiddleFinder();
 
     class Solver {
         long startPos;
@@ -82,19 +96,12 @@ public class Main {
         int[] circle = new int[len];
         int circleIt;
         int totalLen;
-        int allSame = -1;
-
-        void clear() {
-            totalLen = 0;
-            curHash = 0;
-            for (int i = 0; i < len; i++) {
-                getNewValue(false);
-            }
-        }
 
         Solver(long startPos) {
             this.startPos = startPos;
-            clear();
+            for (int i = 0; i < len; i++) {
+                getNewValue(false);
+            }
         }
 
         void getNewValue(boolean addToCounter) {
@@ -102,30 +109,24 @@ public class Main {
             addToCircle(value);
             if (addToCounter) {
                 finder.addElement(value);
-            } else {
-                if (allSame == -1 || allSame == value) {
-                    allSame = value;
-                } else {
-                    allSame = -2;
-                }
             }
         }
 
         void addToCircle(int value) {
             if (totalLen >= circle.length) {
-                curHash = sub(curHash, mul(pow[len - 1],  circle[circleIt]));
+                curHash -= pow[len - 1] * circle[circleIt];
             }
             totalLen++;
             circle[circleIt] = value;
             circleIt = (circleIt + 1) & (len - 1);
-            curHash = add(mul(curHash, p),  value);
+            curHash = curHash * p + value;
         }
     }
 
     void solve() {
         pow[0] = 1;
         for (int i = 1; i < pow.length; i++) {
-            pow[i] = mul(pow[i - 1], p);
+            pow[i] = pow[i - 1] * p;
         }
         Random rnd = new Random(7877881 * (myId + 1));
         final int SOLVERS = 1;
@@ -133,13 +134,8 @@ public class Main {
         HashSet<Integer> hashes = new HashSet<>();
         n = median.GetN();
         initPart();
-        int allSame = -1;
         for (int i = 0; i < SOLVERS; i++) {
-            solvers[i] = new Solver(Math.abs(rnd.nextLong()) % (long) 1e17);
-//            System.err.println("start from " + partFrom);
-            if (solvers[i].allSame > 0) {
-                allSame = solvers[i].allSame;
-            }
+            solvers[i] = new Solver(partFrom);
             if (hashes.contains(solvers[i].curHash)) {
                 solvers[i] = null;
             } else {
@@ -179,85 +175,77 @@ public class Main {
             hashesArray[it++] = i;
         }
         Arrays.sort(hashesArray);
-        for (int globIter = 0; globIter < 3; globIter++) {
-            for (Solver s : solvers) {
-                if (s == null) {
-                    continue;
-                }
-                s.clear();
-//                System.err.println("partLen = " + partLen);
-                for (int i = 0; ; i++) {
-                    s.getNewValue(true);
-                    if (Arrays.binarySearch(hashesArray, s.curHash) >= 0) {
-                        break;
-                    }
-                }
+        for (Solver s : solvers) {
+            if (s == null) {
+                continue;
             }
-            putInt(rootNode, finder.cntLess);
-            for (int i = 0; i < PARTS; i++) {
-                putInt(rootNode, finder.values[i]);
-            }
-            putInt(rootNode, finder.cntMore);
-            sendMessage(rootNode);
-            if (iAmRoot()) {
-                int sumCntLess = 0, sum = 0;
-                int[] partsSum = new int[PARTS];
-                for (int i = 0; i < nodes; i++) {
-                    receiveMessage(i);
-                    sumCntLess += readInt(i);
-                    for (int j = 0; j < PARTS; j++) {
-                        partsSum[j] += readInt(i);
-                    }
-                    sum += readInt(i);
+            while (true) {
+                s.getNewValue(true);
+                if (Arrays.binarySearch(hashesArray, s.curHash) >= 0) {
+                    break;
                 }
-                for (int i = 0; i < PARTS; i++) {
-                    sum += partsSum[i];
-                }
-                sum += sumCntLess;
-//                if (median.GetN() % sum) {
-//                    throw new AssertionError();
-//                }
-                int nextLeft = -1, nextRight = -1;
-//                System.err.println(sumCntLess + " " +Arrays.toString(partsSum));
-                for (int i = 0; i < PARTS; i++) {
-                    sumCntLess += partsSum[i];
-                    if (sumCntLess * 2 > sum) {
-                        nextLeft = finder.minElement + finder.partSize * i;
-                        nextRight = nextLeft + finder.partSize - 1;
-                        break;
-                    }
-                }
-                if (nextLeft == -1) {
+                if (s.totalLen > 2e7) {
                     throw new AssertionError();
                 }
-//                System.err.println("!!! " + nextLeft + " " + nextRight);
-                for (int i = 0; i < nodes; i++) {
-                    putInt(i, nextLeft);
-                    putInt(i, nextRight);
-                    sendMessage(i);
-                }
             }
-            receiveMessage(rootNode);
-            finder.clear(readInt(rootNode), readInt(rootNode));
         }
-        if (finder.minElement != finder.maxElement) {
-            throw new AssertionError(finder.minElement + " " + finder.maxElement);
+        finder.shrink();
+        putInt(rootNode, finder.minElement);
+        putInt(rootNode, finder.cntMin);
+        putInt(rootNode, finder.maxElement);
+        putInt(rootNode, finder.cntMax);
+        putInt(rootNode, finder.sz);
+        for (int i = 0; i < finder.sz; i++) {
+            putInt(rootNode, finder.values[i]);
         }
-        putInt(rootNode, allSame);
         sendMessage(rootNode);
         if (iAmRoot()) {
+            List<Element> all = new ArrayList<>();
             for (int i = 0; i < nodes; i++) {
                 receiveMessage(i);
-                int x =readInt(i);
-                if (x > 0) {
-                    allSame = x;
+                all.add(new Element(readInt(i), readInt(i)));
+                all.add(new Element(readInt(i), readInt(i)));
+                int cnt = readInt(i);
+                for (int j = 0; j < cnt; j++) {
+                    all.add(new Element(readInt(i), 1));
                 }
             }
-            if (allSame > 0) {
-                println(allSame);
-            } else {
-                println(finder.minElement);
+            Collections.sort(all);
+            int totalCnt = 0;
+            int rMin = Integer.MAX_VALUE, rMAx =Integer.MIN_VALUE;
+            for (Element e : all) {
+                if (e.cnt != 0) {
+                    rMAx = Math.max(rMAx, e.value);
+                    rMin =Math.min(rMin, e.value);
+                }
+                totalCnt += e.cnt;
             }
+            if (median.GetN() % totalCnt != 0 && rMAx != rMin) {
+                throw new AssertionError();
+            }
+//            System.err.println("totalCnt = " + totalCnt);
+            int needPos = totalCnt / 2;
+            for (Element e : all) {
+                needPos -= e.cnt;
+                if (needPos < 0) {
+                    println(e.value);
+                    return;
+                }
+            }
+        }
+    }
+
+    class Element implements Comparable<Element> {
+        int value, cnt;
+
+        public Element(int value, int cnt) {
+            this.value = value;
+            this.cnt = cnt;
+        }
+
+        @Override
+        public int compareTo(Element o) {
+            return Integer.compare(value, o.value);
         }
     }
 
@@ -355,6 +343,6 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        new Main().start();
+        new MedianNotOk().start();
     }
 }

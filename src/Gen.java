@@ -4,19 +4,50 @@ import java.util.Random;
 public class Gen {
     PrintWriter out;
 
-    void genArray() {
-        Random rnd = new Random();
-        int n = 1 + rnd.nextInt(10000);
+    Random rnd = new Random();
+
+    void genArrayDist(int MAXN, int vals) {
+        vals = 1 + rnd.nextInt(vals);
+        double[] p = new double[vals];
+        int[] exactVals = new int[vals];
+        for (int i = 0; i < vals; i++) {
+            exactVals[i] = 1 + rnd.nextInt(12345);
+        }
+        double s = 0;
+        for (int i = 0; i < p.length; i++) {
+            p[i] = rnd.nextDouble();
+            s += p[i];
+        }
+        for (int i = 0; i < p.length; i++) {
+            p[i] /= s;
+        }
+        int n = 1 + rnd.nextInt(MAXN);
         out.println(n);
         for (int i = 0; i < n; i++) {
-            long x = 1 + rnd.nextInt((int) 10);
+            double xx = rnd.nextDouble();
+            for (int j = 0; j < vals; j++) {
+                xx -= p[j];
+                if (xx < 0){
+                    out.print(exactVals[j]+" ");
+                    break;
+                }
+            }
+        }
+        out.println();
+    }
+
+    void genArray(int MAXN, int MAXV) {
+        int n = 1 + rnd.nextInt(MAXN);
+        out.println(n);
+        for (int i = 0; i < n; i++) {
+            int value =  rnd.nextDouble() < 1e-4 ? 1 : 2;
+            long x = 1 + value;
             out.print(x + " ");
         }
         out.println();
     }
 
     void genGrid() {
-        Random rnd = new Random();
         final int MAX = 50000;
         int n = 1 + rnd.nextInt(20);
         int m = 1 + rnd.nextInt(MAX);
@@ -31,8 +62,10 @@ public class Gen {
     }
 
     void solve() {
-        // genArray();
-        genGrid();
+        genArrayDist(100000, 10);
+//        genArray(10000, 1000000);
+        genArray(1000, 1000);
+//        genGrid();
     }
 
     void run() {

@@ -1,3 +1,8 @@
+import java.util.HashMap;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
 // A program you submit to Distributed Code Jam will be compiled by Google, and
 // will run on multiple computers (nodes). This library describes the interface
 // needed for the nodes to identify themselves and to communicate.
@@ -8,15 +13,46 @@
 // int n = message.NumberOfNodes();
 public class message {
 
+    static int nodes;
+    static HashMap<Long, Integer> threadIdToNodeId = new HashMap<>();
+    static BlockingQueue<OneMessage>[][] queues;
+    static OneMessage[][] currentReadingMessage;
+    static OneMessage[][] currentSendMessage;
+    static void init(int newNodes) {
+        nodes = newNodes;
+        threadIdToNodeId = new HashMap<>();
+        queues = new BlockingQueue[nodes][nodes];
+        for (int i = 0; i < nodes; i++) {
+            for (int j = 0; j < nodes; j++) {
+                queues[i][j] = new ArrayBlockingQueue<OneMessage>(10);
+            }
+        }
+        currentReadingMessage = new OneMessage[nodes][nodes];
+        currentSendMessage = new OneMessage[nodes][nodes];
+        for (int i = 0; i < nodes; i++) {
+            for (int j = 0; j < nodes; j++) {
+                currentSendMessage[i][j] = new OneMessage(i);
+            }
+        }
+    }
+    static void registerThread(long threadId, int nodeId) {
+        threadIdToNodeId.put(threadId, nodeId);
+    }
+
+
     // The number of nodes on which the solution is running.
     public static int NumberOfNodes() {
-        return 0;
+        return nodes;
     }
 
     // The index (in the range [0 .. NumberOfNodes()-1]) of the node on which this
     // process is running.
     public static int MyNodeId() {
-        return 0;
+        Integer result = threadIdToNodeId.get(Thread.currentThread().getId());
+        if (result == null) {
+            throw new AssertionError("Strange! Can't find thread!");
+        }
+        return result;
     }
 
     // In all the functions below, if "target" or "source" is not in the valid
@@ -29,16 +65,31 @@ public class message {
     // Append "value" to the message that is being prepared for the node with id
     // "target". The "Int" in PutInt is interpreted as 32 bits, regardless of
     // whether the actual int type will be 32 or 64 bits.
-    public static void PutChar(int target, char value) {}
-    public static void PutInt(int target, int value) {}
-    public static void PutLL(int target, long value) {}
+    public static void PutChar(int target, char value) {
+        throw new AssertionError("not supported!");
+    }
+    public static void PutInt(int target, int value) {
+        int me = MyNodeId();
+        OneMessage cur = currentSendMessage[me][target];
+        cur.addInt(value);
+    }
+    public static void PutLL(int target, long value) {
+        int me = MyNodeId();
+        OneMessage cur = currentSendMessage[me][target];
+        cur.addLong(value);
+    }
 
     // Send the message that was accumulated in the appropriate buffer to the
     // "target" instance, and clear the buffer for this instance.
     //
     // This method is non-blocking - that is, it does not wait for the receiver to
     // call "Receive", it returns immediately after sending the message.
-    public static void Send(int target) {}
+    public static void Send(int target) {
+        int me = MyNodeId();
+        OneMessage cur = currentSendMessage[me][target];
+        queues[target][me].add(cur);
+        currentSendMessage[me][target] = new OneMessage(me);
+    }
 
     // The library also has a receiving buffer for each instance. When you call
     // "Receive" and retrieve a message from an instance, the buffer tied to this
@@ -56,7 +107,24 @@ public class message {
     // It returns the number of the instance which sent the message (which is equal
     // to source, unless source is -1).
     public static int Receive(int source) {
-        return 0;
+        if (source == -1) {
+            throw new AssertionError("not supported!");
+        }
+        int me = MyNodeId();
+        OneMessage cur = currentReadingMessage[me][source];
+        if (cur != null && !cur.queue.isEmpty()) {
+            throw new AssertionError("Message wan't read fully!");
+        }
+        try {
+            OneMessage msg = queues[me][source].poll(5, TimeUnit.SECONDS);
+            if (msg == null) {
+                throw new AssertionError("Didn't got message :(");
+            }
+            currentReadingMessage[me][source] = msg;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return source;
     }
 
     // Each of these methods returns and consumes one item from the buffer of the
@@ -69,12 +137,22 @@ public class message {
     // The "Int" in GetInt is interpreted as 32 bits, regardless of whether the
     // actual int type will be 32 or 64 bits.
     public static char GetChar(int source) {
-        return '0';
+        throw new AssertionError("not supported!");
     }
     public static int GetInt(int source) {
-        return 0;
+        int me = MyNodeId();
+        OneMessage cur = currentReadingMessage[me][source];
+        if (cur == null) {
+            throw new AssertionError("No message is reading right now from " + source);
+        }
+        return cur.getInt();
     }
     public static long GetLL(int source) {
-        return 0L;
+        int me = MyNodeId();
+        OneMessage cur = currentReadingMessage[me][source];
+        if (cur == null) {
+            throw new AssertionError("No message is reading right now from " + source);
+        }
+        return cur.getLong();
     }
 }
