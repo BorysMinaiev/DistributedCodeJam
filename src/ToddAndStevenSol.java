@@ -1,6 +1,4 @@
-import java.util.*;
-
-public class Main {
+public class ToddAndStevenSol {
     final boolean debug = false;
 
     // [partFrom .. partTo)
@@ -202,6 +200,6 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        new Main().start();
+        new ToddAndStevenSol().start();
     }
 }

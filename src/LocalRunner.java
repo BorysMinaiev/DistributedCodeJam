@@ -2,6 +2,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Random;
 
 public class LocalRunner {
@@ -53,20 +54,36 @@ public class LocalRunner {
         return res;
     }
 
-    final long MAX_V = (long) 10;
-    final int MAX_CNT = 1000;
+    long[] genRandomArrayEven(int len, long maxV, boolean even) {
+        long[] res = new long[len];
+        for (int i = 0; i < len; i++) {
+            res[i] = 1 + Math.abs(rnd.nextLong() % maxV);
+            if (even && res[i] % 2 == 1) {
+                res[i]++;
+            }
+            if (!even && res[i] % 2 == 0) {
+                res[i]++;
+            }
+        }
+        return res;
+    }
+
+    final int MAX_N = 1000;
+    final long MAX_V = 1000;
     final int MAX_NODES = 10;
 
     void start() {
         for (int it =0 ; it < 123123; it++) {
             System.err.println("iter = " + it);
-            nanobots.range = 1 + Math.abs(rnd.nextLong() % MAX_V);
-            int cnt = 1 + rnd.nextInt(MAX_CNT);
-            nanobots.sizes = genRandomArray(cnt, nanobots.range);
-            nanobots.speeds = genRandomArray(cnt, nanobots.range);
+            todd_and_steven.a = genRandomArrayEven(1 + rnd.nextInt(MAX_N), MAX_V,  false);
+            todd_and_steven.b =genRandomArrayEven(1 + rnd.nextInt(MAX_N), MAX_V, true);
+            Arrays.sort(todd_and_steven.a);
+            Arrays.sort(todd_and_steven.b);
             String ans = run(1 + rnd.nextInt(MAX_NODES));
             String ans2 = run(1 + rnd.nextInt(MAX_NODES));
             if (!ans.equals(ans2)) {
+                System.err.println(Arrays.toString(todd_and_steven.a));
+                System.err.println(Arrays.toString(todd_and_steven.b));
                 System.err.println("Ans = " + ans + ", ans2 = " + ans2);
                 throw new AssertionError();
             } else {
