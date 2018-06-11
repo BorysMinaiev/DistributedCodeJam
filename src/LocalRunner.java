@@ -2,8 +2,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
 
 public class LocalRunner {
 
@@ -68,23 +67,57 @@ public class LocalRunner {
         return res;
     }
 
-    final int MAX_N = 1000;
-    final long MAX_V = 1000;
+    final int MAX_N = 100;
+    final int MAX_V = 30;
     final int MAX_NODES = 10;
+
+    void printArray(int[][]r) {
+        System.err.println("{");
+        for (int[] x : r) {
+            System.err.print("{");
+            for (int y : x) {
+                System.err.print(y + ", ");
+            }
+            System.err.println("},");
+        }
+        System.err.println("}");
+    }
 
     void start() {
         for (int it =0 ; it < 123123; it++) {
             System.err.println("iter = " + it);
-            todd_and_steven.a = genRandomArrayEven(1 + rnd.nextInt(MAX_N), MAX_V,  false);
-            todd_and_steven.b =genRandomArrayEven(1 + rnd.nextInt(MAX_N), MAX_V, true);
-            Arrays.sort(todd_and_steven.a);
-            Arrays.sort(todd_and_steven.b);
-            String ans = run(1 + rnd.nextInt(MAX_NODES));
+            int n = 1 + rnd.nextInt(MAX_N);
+            int m = 1 + rnd.nextInt(MAX_N);
+            List<Integer> all = new ArrayList<Integer>();
+            for (int i = 1; i <= n *m; i++) {
+                all.add(i);
+            }
+            Collections.shuffle(all);
+            int[][] r = new int[n][m];
+            int itt = 0;
+            for (int i = 0; i <n ; i++) {
+                for (int j = 0; j < m; j++) {
+                   r[i][j] = all.get(itt++);
+                }
+            }
+            towels.before =rnd.nextInt(n * m);
+            towels.r =r;
+            int nodes = 1 + rnd.nextInt(MAX_NODES);
+            String ans = run(nodes);
             String ans2 = run(1 + rnd.nextInt(MAX_NODES));
-            if (!ans.equals(ans2)) {
-                System.err.println(Arrays.toString(todd_and_steven.a));
-                System.err.println(Arrays.toString(todd_and_steven.b));
+//            String ans2 = run(1 );
+            if (ans.length() == 0) {
                 System.err.println("Ans = " + ans + ", ans2 = " + ans2);
+                System.err.println("r = " + Arrays.deepToString(r));
+                printArray(r);
+                System.err.println("before = " + towels.before + ", nodes = " + nodes);
+                throw new AssertionError();
+            }
+            if (!ans.equals(ans2)) {
+                System.err.println("Ans = " + ans + ", ans2 = " + ans2);
+                System.err.println("r = " + Arrays.deepToString(r));
+                printArray(r);
+                System.err.println("before = " + towels.before);
                 throw new AssertionError();
             } else {
                 System.err.print("ok, ans = " + ans);

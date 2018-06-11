@@ -1,6 +1,6 @@
 import java.util.Arrays;
 
-public class Main {
+public class TowelsSol {
     final boolean debug = false;
 
     // [partFrom .. partTo)
@@ -282,6 +282,6 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        new Main().start();
+        new TowelsSol().start();
     }
 }
